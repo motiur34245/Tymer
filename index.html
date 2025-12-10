@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>StudyTimer — সুন্দর UI ও রিংটোন</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f1724;
+    --card:#0b1220;
+    --accent1:#7c3aed;
+    --accent2:#06b6d4;
+    --muted:#94a3b8;
+    --glass: rgba(255,255,255,0.03);
+    --success:#10b981;
+    --danger:#ef4444;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+    background: radial-gradient(1200px 500px at 10% 10%, rgba(124,58,237,0.12), transparent 6%),
+                radial-gradient(900px 400px at 90% 90%, rgba(6,182,212,0.08), transparent 6%),
+                var(--bg);
+    color:#e6eef8;
+    padding:24px;
+  }
+
+  .app{
+    width:100%;
+    max-width:980px;
+    display:grid;
+    grid-template-columns: 420px 1fr;
+    gap:20px;
+    align-items:start;
+  }
+
+  /* Left card - controls */
+  .card{
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:16px;
+    padding:20px;
+    border:1px solid rgba(255,255,255,0.03);
+    box-shadow: 0 8px 30px rgba(2,6,23,0.6);
+  }
+  h1{
+    margin:0 0 8px 0;
+    font-size:20px;
+  }
+  p.lead{ margin:0 0 16px 0; color:var(--muted); font-size:13px }
+
+  .inputs{
+    display:flex;
+    gap:8px;
+    margin-bottom:14px;
+  }
+  .inputs input[type="number"]{
+    width:100%;
+    padding:12px;
+    border-radius:10px;
+    border:1px solid rgba(255,255,255,0.03);
+    background: transparent;
+    color:inherit;
+    font-size:16px;
+    text-align:center;
+  }
+  .inputs label{ font-size:12px; color:var(--muted); display:block; text-align:center; margin-top:6px }
+
+  .presets { display:flex; gap:8px; margin-bottom:12px; }
+  .presets button{
+    flex:1;
+    padding:10px;
+    border-radius:10px;
+    border:0;
+    background:linear-gradient(90deg,var(--accent1),var(--accent2));
+    color:white;
+    font-weight:600;
+    cursor:pointer;
+    box-shadow:0 6px 18px rgba(6,182,212,0.08);
+  }
+
+  .big {
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+    border-radius:12px;
+    padding:18px;
+    text-align:center;
+    margin-bottom:12px;
+  }
+  .display-time{
+    font-size:44px;
+    font-weight:700;
+    letter-spacing:0.6px;
+  }
+  .end-time{ font-size:13px; color:var(--muted); margin-top:6px }
+
+  .controls-row{ display:flex; gap:10px; margin-bottom:10px; }
+  .controls-row button{
+    flex:1;
+    padding:12px;
+    border-radius:10px;
+    border:0;
+    font-weight:700;
+    cursor:pointer;
+    font-size:15px;
+  }
+  .btn-start{ background: linear-gradient(90deg,var(--accent2),#34d399); color:#042022 }
+  .btn-pause{ background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--muted) }
+  .btn-reset{ background:transparent; border:1px solid rgba(255,255,255,0.04); color:var(--muted) }
+  .btn-stop{ background:var(--danger); color:white; display:none }
+
+  .option-row{ display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap; }
+  .select, .file{
+    padding:10px;
+    border-radius:10px;
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.04);
+    color:var(--muted);
+    font-size:14px;
+  }
+  .small{ font-size:13px; color:var(--muted); margin-top:10px }
+
+  /* Right panel - visual timer */
+  .panel{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .visual{
+    width:100%;
+    max-width:520px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+    border-radius:16px;
+    padding:28px;
+    border:1px solid rgba(255,255,255,0.035);
+    box-shadow: 0 10px 40px rgba(2,6,23,0.6);
+    display:flex;
+    gap:18px;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .left-vis{ flex:1; display:flex; flex-direction:column; gap:12px; align-items:center }
+  .progress-wrap{ width:220px; height:220px; position:relative; }
+  .progress-wrap svg{ width:100%; height:100%; transform: rotate(-90deg); }
+  .time-center{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column;
+  }
+  .time-center .bigtime{ font-size:36px; font-weight:700 }
+  .time-center .sub{ color:var(--muted); font-size:13px; margin-top:6px }
+  .right-vis{ width:220px; display:flex; flex-direction:column; gap:12px; align-items:center; justify-content:center }
+  .meta{ font-size:14px; color:var(--muted) }
+
+  footer{ grid-column:1/-1; text-align:center; color:var(--muted); margin-top:12px; font-size:13px }
+
+  @media (max-width:980px){
+    .app{ grid-template-columns:1fr; }
+    .visual{ flex-direction:column; }
+    .right-vis{ width:100% }
+  }
+</style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="Study Timer App">
+    <div class="card" role="region" aria-label="Controls">
+      <h1>StudyTimer</h1>
+      <p class="lead">ঘণ্টা, মিনিট, সেকেন্ড সেট করুন — টাইমার চালান। শেষ হলে রিং বাজবে।</p>
+
+      <div class="inputs" aria-hidden="false">
+        <div style="flex:1">
+          <input id="hours" type="number" min="0" value="0" aria-label="hours">
+          <label>ঘন্টা</label>
+        </div>
+        <div style="flex:1">
+          <input id="minutes" type="number" min="0" value="30" aria-label="minutes">
+          <label>মিনিট</label>
+        </div>
+        <div style="flex:1">
+          <input id="seconds" type="number" min="0" value="0" aria-label="seconds">
+          <label>সেকেন্ড</label>
+        </div>
+      </div>
+
+      <div class="presets" role="toolbar" aria-label="Presets">
+        <button data-h="0" data-m="25" data-s="0">25m</button>
+        <button data-h="0" data-m="30" data-s="0">30m</button>
+        <button data-h="0" data-m="45" data-s="0">45m</button>
+        <button data-h="1" data-m="0" data-s="0">1h</button>
+      </div>
+
+      <div class="big">
+        <div class="display-time" id="timeDisplay">00:30:00</div>
+        <div class="end-time" id="endDisplay">সম্ভাব্য শেষ সময়: —</div>
+      </div>
+
+      <div class="controls-row">
+        <button id="startBtn" class="btn-start">Start</button>
+        <button id="pauseBtn" class="btn-pause">Pause</button>
+        <button id="resetBtn" class="btn-reset">Reset</button>
+      </div>
+
+      <div class="option-row">
+        <select id="ringSelect" class="select" aria-label="Ring selection">
+          <option value="melody">Melody (Recommended)</option>
+          <option value="beep">Classic Beep</option>
+          <option value="file">Use uploaded file</option>
+        </select>
+
+        <input id="fileInput" class="file" type="file" accept="audio/*" aria-label="Upload ringtone" style="display:none" />
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button id="stopAlarmBtn" class="btn-stop" aria-hidden="true">Stop Alarm</button>
+        <button id="notifyBtn" class="btn-pause" style="flex:1;background:transparent;border:1px solid rgba(255,255,255,0.04)">Enable Notification</button>
+      </div>
+
+      <div class="small">মোবাইল ব্রাউজারে সাউন্ড বাজাতে প্রথমে Start চাপতেই হবে (ইউজার ইন্টারঅ্যাকশন)। আপনি চাইলে নিজে রিংটোন আপলোড করতে পারেন।</div>
+    </div>
+
+    <div class="panel">
+      <div class="visual" role="region" aria-label="Visual timer">
+        <div class="left-vis">
+          <div class="progress-wrap" aria-hidden="false">
+            <svg id="progressSvg" viewBox="0 0 100 100" role="img" aria-label="Progress ring">
+              <defs>
+                <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#7c3aed" />
+                  <stop offset="100%" stop-color="#06b6d4" />
+                </linearGradient>
+              </defs>
+              <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.06)" stroke-width="12" fill="none"></circle>
+              <circle id="progress" cx="50" cy="50" r="40" stroke="url(#g1)" stroke-width="12" stroke-linecap="round" fill="none"
+                stroke-dasharray="251.2" stroke-dashoffset="0"></circle>
+            </svg>
+
+            <div class="time-center">
+              <div class="bigtime" id="centerTime">00:30:00</div>
+              <div class="sub" id="centerSub">Remaining</div>
+            </div>
+          </div>
+
+          <div class="meta">Status: <span id="statusText">Idle</span></div>
+        </div>
+
+        <div class="right-vis">
+          <div style="text-align:center">
+            <div style="font-weight:700;font-size:18px">Study Focus</div>
+            <div class="meta">Stay focused — আমরা তোমাকে টাইম করব।</div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:6px;width:100%">
+            <div class="meta">End at:</div>
+            <div id="endTimeBig" style="font-weight:600"></div>
+          </div>
+
+          <div style="display:flex;gap:8px;width:100%">
+            <button id="quickStop" class="btn-reset" style="flex:1">Quick Stop</button>
+            <button id="skip5" class="btn-pause" style="flex:1">+5m</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>Made with ❤ — মতিউর  StudyTimer</footer>
+  </div>
+
+<script>
+/* ============================
+  Variables & Elements
+   ============================ */
+const hoursEl = document.getElementById('hours');
+const minutesEl = document.getElementById('minutes');
+const secondsEl = document.getElementById('seconds');
+
+const timeDisplay = document.getElementById('timeDisplay');
+const centerTime = document.getElementById('centerTime');
+const centerSub = document.getElementById('centerSub');
+const endDisplay = document.getElementById('endDisplay');
+const endTimeBig = document.getElementById('endTimeBig');
+const statusText = document.getElementById('statusText');
+
+const startBtn = document.getElementById('startBtn');
+const pauseBtn = document.getElementById('pauseBtn');
+const resetBtn = document.getElementById('resetBtn');
+const stopAlarmBtn = document.getElementById('stopAlarmBtn');
+
+const presets = document.querySelectorAll('.presets button');
+const ringSelect = document.getElementById('ringSelect');
+const fileInput = document.getElementById('fileInput');
+const notifyBtn = document.getElementById('notifyBtn');
+const quickStop = document.getElementById('quickStop');
+const skip5 = document.getElementById('skip5');
+
+const progressCircle = document.getElementById('progress');
+
+let totalSeconds = 0;
+let remaining = 0;
+let timerId = null;
+let endTimestamp = null;
+
+/* Audio & Alarm state */
+let audioCtx = null;
+let alarmInterval = null;
+let isAlarming = false;
+let uploadedAudio = null; // HTMLAudioElement if user uploads
+
+/* progress circle circumference (r=40 => 2πr ≈ 251.2) */
+const CIRC = 2 * Math.PI * 40;
+
+/* initialization */
+progressCircle.style.strokeDasharray = CIRC;
+progressCircle.style.strokeDashoffset = 0;
+updateDisplays();
+
+/* ============================
+  Helper Functions
+   ============================ */
+function toSeconds(h,m,s){
+  return Math.max(0, (Number(h)||0)*3600 + (Number(m)||0)*60 + (Number(s)||0));
+}
+function formatHHMMSS(sec){
+  sec = Math.max(0, Math.floor(sec));
+  const h = String(Math.floor(sec/3600)).padStart(2,'0');
+  const m = String(Math.floor((sec%3600)/60)).padStart(2,'0');
+  const s = String(sec%60).padStart(2,'0');
+  return `${h}:${m}:${s}`;
+}
+function updateDisplays(){
+  timeDisplay.textContent = formatHHMMSS(remaining);
+  centerTime.textContent = formatHHMMSS(remaining);
+  endDisplay.textContent = endTimestamp ? 'সম্ভাব্য শেষ সময়: ' + (new Date(endTimestamp)).toLocaleString() : 'সম্ভাব্য শেষ সময়: —';
+  endTimeBig.textContent = endTimestamp ? (new Date(endTimestamp)).toLocaleTimeString() : '—';
+
+  // progress circle
+  if (totalSeconds > 0) {
+    const frac = 1 - (remaining / totalSeconds);
+    const offset = Math.max(0, Math.min(1, frac)) * CIRC;
+    progressCircle.style.strokeDashoffset = offset;
+  } else {
+    progressCircle.style.strokeDashoffset = 0;
+  }
+}
+
+/* apply inputs */
+function applyInputsToTimer(){
+  totalSeconds = toSeconds(hoursEl.value, minutesEl.value, secondsEl.value);
+  remaining = totalSeconds;
+  endTimestamp = null;
+  stopAlarmIfPlaying();
+  updateDisplays();
+  statusText.textContent = 'Ready';
+}
+
+/* ============================
+  Timer Controls
+   ============================ */
+function startTimer(){
+  if (timerId) return;
+  if (remaining <= 0) return;
+  if (!audioCtx) {
+    try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ audioCtx = null; }
+  }
+  // resume audio context on user gesture
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
+  const now = Date.now();
+  endTimestamp = now + remaining*1000;
+  timerId = setInterval(()=> {
+    const nowMs = Date.now();
+    remaining = Math.max(0, Math.ceil((endTimestamp - nowMs)/1000));
+    updateDisplays();
+    if (remaining <= 0) {
+      clearInterval(timerId);
+      timerId = null;
+      onTimerEnd();
+    }
+  }, 250);
+  statusText.textContent = 'Running';
+  updateDisplays();
+}
+
+function pauseTimer(){
+  if (!timerId) return;
+  clearInterval(timerId);
+  timerId = null;
+  // recompute remaining precisely
+  if (endTimestamp) {
+    remaining = Math.max(0, Math.ceil((endTimestamp - Date.now())/1000));
+    endTimestamp = null;
+  }
+  statusText.textContent = 'Paused';
+  updateDisplays();
+}
+
+function resetTimer(){
+  clearInterval(timerId); timerId = null;
+  stopAlarmIfPlaying();
+  applyInputsToTimer();
+  statusText.textContent = 'Reset';
+}
+
+/* ============================
+  Alarm: Melody, Beep, or File
+   ============================ */
+
+/* Melody sequence using WebAudio */
+function playMelody(){
+  if (!audioCtx) return; // fallback
+  // notes (freqs) and durations (s)
+  const melody = [
+    [660, 0.22],[740,0.22],[880,0.36],
+    [740,0.22],[880,0.22],[990,0.44],
+    [880,0.22],[740,0.22],[660,0.44]
+  ];
+  const repeat = 6; // make it long
+  let t0 = audioCtx.currentTime + 0.02;
+  for (let r=0;r<repeat;r++){
+    melody.forEach((n,i) => {
+      const start = t0 + r * 1.4 + i * 0.14;
+      const dur = n[1];
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = n[0];
+      gain.gain.value = 0;
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.18, start + 0.02);
+      gain.gain.linearRampToValueAtTime(0.0001, start + dur);
+      osc.start(start);
+      osc.stop(start + dur + 0.02);
+    });
+  }
+}
+
+/* Classic beep pattern using oscillator */
+function playBeeps(){
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+  function oneBeep(offset){
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.frequency.value = 880;
+    osc.type = 'square';
+    gain.gain.value = 0;
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    const s = now + offset;
+    gain.gain.setValueAtTime(0, s);
+    gain.gain.linearRampToValueAtTime(0.25, s + 0.02);
+    gain.gain.linearRampToValueAtTime(0.0001, s + 0.24);
+    osc.start(s);
+    osc.stop(s + 0.26);
+  }
+  // schedule repeated beeps for ~15 seconds
+  for (let i=0;i<15;i++){
+    oneBeep(i*0.6);
+  }
+}
+
+/* Play uploaded audio file (looped) */
+function playUploadedAudio(){
+  if (!uploadedAudio) return;
+  uploadedAudio.loop = true;
+  uploadedAudio.currentTime = 0;
+  const playPromise = uploadedAudio.play();
+  if (playPromise !== undefined){
+    playPromise.catch(()=>{ /* autoplay may be blocked if no gesture; we assume Start was pressed */ });
+  }
+}
+
+/* master play alarm */
+function playAlarm(){
+  if (isAlarming) return;
+  isAlarming = true;
+  stopAlarmBtn.style.display = 'inline-block';
+  stopAlarmBtn.setAttribute('aria-hidden','false');
+  statusText.textContent = 'Alarm ringing';
+  centerSub.textContent = 'Time up!';
+
+  // vibrate if available
+  if (navigator.vibrate) {
+    try{ navigator.vibrate([300,150,300,150,600]); }catch(e){}
+  }
+
+  const mode = ringSelect.value;
+  if (mode === 'melody'){
+    playMelody();
+  } else if (mode === 'beep'){
+    playBeeps();
+  } else if (mode === 'file'){
+    playUploadedAudio();
+  }
+
+  // fallback repeating beep using setInterval if audioCtx not available and no uploaded file
+  if (!audioCtx && !uploadedAudio){
+    alarmInterval = setInterval(()=> {
+      try{
+        const a = new Audio();
+        a.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA='; // silent tiny
+        a.play();
+      }catch(e){}
+    },700);
+  }
+}
+
+/* stop alarm */
+function stopAlarmIfPlaying(){
+  if (!isAlarming) return;
+  isAlarming = false;
+  stopAlarmBtn.style.display = 'none';
+  stopAlarmBtn.setAttribute('aria-hidden','true');
+  centerSub.textContent = 'Remaining';
+  statusText.textContent = 'Stopped alarm';
+  // stop uploaded audio
+  if (uploadedAudio){
+    try{ uploadedAudio.pause(); uploadedAudio.currentTime = 0; }catch(e){}
+  }
+  // clear any interval
+  if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
+  // stop vibrations
+  if (navigator.vibrate) {
+    try{ navigator.vibrate(0); }catch(e){}
+  }
+  // Note: we cannot stop webaudio oscillators created earlier individually; they are scheduled to stop.
+}
+
+/* when timer ends */
+function onTimerEnd(){
+  updateDisplays();
+  playAlarm();
+
+  // show notification if permission
+  if ("Notification" in window && Notification.permission === "granted") {
+    try{
+      new Notification('StudyTimer — সময় শেষ', { body: 'সময় শেষ! বিরতি নাও বা পরবর্তী সেশন শুরু করো।', silent: true });
+    }catch(e){}
+  } else {
+    // try to request (user can enable)
+  }
+}
+
+/* ============================
+  File upload handling
+   ============================ */
+fileInput.addEventListener('change', (ev)=>{
+  const f = ev.target.files && ev.target.files[0];
+  if (!f) { uploadedAudio = null; return; }
+  const url = URL.createObjectURL(f);
+  const a = new Audio(url);
+  // ensure we can play when time ends
+  uploadedAudio = a;
+  ringSelect.value = 'file';
+  // show filename in select (small UX)
+  const nameShort = f.name.length>18 ? '...'+f.name.slice(-15) : f.name;
+  // update option text for file
+  let opt = Array.from(ringSelect.options).find(o => o.value==='file');
+  if (opt) opt.textContent = 'Use uploaded file — ' + nameShort;
+});
+
+/* when ringSelect changes, toggle file input visibility */
+ringSelect.addEventListener('change', ()=>{
+  if (ringSelect.value === 'file'){
+    fileInput.style.display = 'inline-block';
+  } else {
+    fileInput.style.display = 'none';
+  }
+});
+
+/* ============================
+  Event handlers & wiring
+   ============================ */
+presets.forEach(btn=>{
+  btn.addEventListener('click', ()=> {
+    hoursEl.value = btn.getAttribute('data-h');
+    minutesEl.value = btn.getAttribute('data-m');
+    secondsEl.value = btn.getAttribute('data-s');
+    applyInputsToTimer();
+  });
+});
+
+startBtn.addEventListener('click', ()=>{
+  // ensure audio context is resumed on user gesture
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
+  startTimer();
+});
+
+pauseBtn.addEventListener('click', pauseTimer);
+resetBtn.addEventListener('click', resetTimer);
+stopAlarmBtn.addEventListener('click', stopAlarmIfPlaying);
+
+quickStop.addEventListener('click', ()=>{
+  // stop everything immediately
+  clearInterval(timerId); timerId = null;
+  remaining = 0; updateDisplays();
+  onTimerEnd();
+});
+
+skip5.addEventListener('click', ()=>{
+  // add 5 minutes
+  remaining += 300;
+  if (endTimestamp) endTimestamp += 300000;
+  if (!timerId) statusText.textContent = 'Ready (+5m)';
+  updateDisplays();
+});
+
+/* enable notification */
+notifyBtn.addEventListener('click', async ()=>{
+  if (!("Notification" in window)) {
+    alert('এই ব্রাউজারে Notification সাপোর্ট নেই।');
+    return;
+  }
+  try{
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      alert('Notification অন করা হয়েছে। প্রোগ্রেস শেষে আপনি নোটিফিকেশন পাবেন।');
+    } else {
+      alert('Notification অনুমতি দেওয়া হয়নি।');
+    }
+  }catch(e){ console.warn(e); }
+});
+
+/* keyboard shortcuts */
+document.addEventListener('keydown', (e)=>{
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (timerId) pauseTimer(); else startTimer();
+  } else if (e.key.toLowerCase() === 'r') {
+    resetTimer();
+  }
+});
+
+/* init */
+applyInputsToTimer();
+
+/* Accessibility: update displays periodically even when idle for clock */
+setInterval(()=> {
+  // update the center/time displays if timer is running or idle
+  updateDisplays();
+}, 800);
+
+</script>
+</body>
+</html>
